@@ -1,0 +1,6 @@
+{
+  "name": "Folio",
+  "description": "Uma rede social para exibição de portfólio de criadores.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
