@@ -116,9 +116,11 @@ export default function ProfilePage() {
               {/* Projects */}
               <div className="lg:col-span-2 order-1 lg:order-2">
                 {user.projects && user.projects.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="columns-1 sm:columns-2 gap-6">
                     {user.projects.map((project: any) => (
-                      <ProjectCard key={project.id} project={{ ...project, user }} />
+                      <div key={project.id} className="mb-6 break-inside-avoid">
+                        <ProjectCard project={{ ...project, user }} />
+                      </div>
                     ))}
                   </div>
                 ) : (

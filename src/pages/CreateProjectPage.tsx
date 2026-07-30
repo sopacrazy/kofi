@@ -127,6 +127,7 @@ export default function CreateProjectPage() {
                   <option value="Branding">Branding</option>
                   <option value="Dev">Desenvolvimento Web</option>
                   <option value="Fotografia">Fotografia</option>
+                  <option value="3D">3D</option>
                 </select>
               </div>
 

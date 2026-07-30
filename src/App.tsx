@@ -1,7 +1,9 @@
-import { Routes, Route, Link, useNavigate } from 'react-router';
+import { useState, FormEvent } from 'react';
+import { Routes, Route, Link, NavLink, useNavigate } from 'react-router';
 import { useAuthStore } from './store/auth';
-import { Heart, Home, Bell, PlusSquare, Menu } from 'lucide-react';
+import { Mail, Menu, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -10,86 +12,151 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import FeedPage from './pages/FeedPage';
+import { cn } from '@/lib/utils';
+import HomePage from './pages/HomePage';
+import DiscoverPage from './pages/DiscoverPage';
+import CreatorsPage from './pages/CreatorsPage';
 import ProfilePage from './pages/ProfilePage';
 import ProjectPage from './pages/ProjectPage';
 import LoginPage from './pages/LoginPage';
 import CreateProjectPage from './pages/CreateProjectPage';
 
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    'text-sm font-semibold transition-colors',
+    isActive ? 'text-primary' : 'text-gray-600 hover:text-gray-900'
+  );
+
 function Navbar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+
+  const handleSearch = (e: FormEvent) => {
+    e.preventDefault();
+    navigate(query.trim() ? `/descobrir?q=${encodeURIComponent(query.trim())}` : '/descobrir');
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-primary rounded-full flex items-center justify-center">
-              <Heart className="w-5 h-5 text-primary-foreground fill-current" />
+        <div className="flex items-center justify-between h-16 gap-4">
+          <div className="flex items-center gap-8 min-w-0">
+            <Link to="/" className="font-extrabold text-xl tracking-tight text-primary shrink-0">
+              Folio
+            </Link>
+            <div className="hidden lg:flex items-center gap-6">
+              <NavLink to="/" end className={navLinkClass}>Início</NavLink>
+              <NavLink to="/descobrir" className={navLinkClass}>Descobrir</NavLink>
+              <NavLink to="/criadores" className={navLinkClass}>Criadores</NavLink>
+              <span className="text-sm font-medium text-gray-400 cursor-default select-none">Vagas</span>
+              <span className="text-sm font-medium text-gray-400 cursor-default select-none">Blog</span>
             </div>
-            <span className="font-extrabold text-xl tracking-tight text-gray-900">Folio</span>
-          </Link>
+          </div>
 
-          {user ? (
-            <div className="flex items-center gap-2">
-              <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
-                <Link to={`/@${user.username}`}>Sua página</Link>
-              </Button>
-              <Button asChild variant="ghost" size="icon">
-                <Link to="/create">
-                  <PlusSquare className="w-5 h-5" />
-                </Link>
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Bell className="w-5 h-5" />
-              </Button>
-              <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex">
-                <Link to="/">
-                  <Home className="w-5 h-5" />
-                </Link>
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="rounded-full ml-1 outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    <Avatar className="w-9 h-9 border border-gray-100">
-                      <AvatarImage src={user.avatarUrl} alt={user.username} />
-                      <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to={`/@${user.username}`}>Meu perfil</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => {
-                      logout();
-                      navigate('/');
-                    }}
-                  >
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Button variant="ghost" size="icon" className="sm:hidden">
-                <Menu className="w-5 h-5" />
-              </Button>
+          <form onSubmit={handleSearch} className="hidden md:block flex-1 max-w-sm">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar criadores, projetos, tags..."
+                className="pl-9 h-9 rounded-full bg-gray-50"
+              />
             </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Button asChild variant="ghost">
-                <Link to="/login">Entrar</Link>
-              </Button>
-              <Button asChild>
-                <Link to="/register">Cadastrar</Link>
-              </Button>
-            </div>
-          )}
+          </form>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {user ? (
+              <>
+                <Button variant="ghost" size="icon" className="hidden sm:inline-flex relative">
+                  <Mail className="w-5 h-5" />
+                  <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary" />
+                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <Avatar className="w-9 h-9 border border-gray-100">
+                        <AvatarImage src={user.avatarUrl} alt={user.username} />
+                        <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link to={`/@${user.username}`}>Meu perfil</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => {
+                        logout();
+                        navigate('/');
+                      }}
+                    >
+                      Sair
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Button asChild size="sm" className="hidden sm:inline-flex">
+                  <Link to="/create">
+                    <Plus className="w-4 h-4" /> Publicar
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <div className="hidden sm:flex items-center gap-3">
+                <Button asChild variant="ghost">
+                  <Link to="/login">Entrar</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/register">Cadastrar</Link>
+                </Button>
+              </div>
+            )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="lg:hidden">
+                <DropdownMenuItem asChild>
+                  <Link to="/">Início</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/descobrir">Descobrir</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/criadores">Criadores</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>Vagas</DropdownMenuItem>
+                <DropdownMenuItem disabled>Blog</DropdownMenuItem>
+                {!user && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/login">Entrar</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/register">Cadastrar</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {user && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/create">Publicar projeto</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </nav>
@@ -102,7 +169,9 @@ export default function App() {
       <Navbar />
       <main>
         <Routes>
-          <Route path="/" element={<FeedPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/descobrir" element={<DiscoverPage />} />
+          <Route path="/criadores" element={<CreatorsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<LoginPage isRegister />} />
           <Route path="/:handle" element={<ProfilePage />} />
