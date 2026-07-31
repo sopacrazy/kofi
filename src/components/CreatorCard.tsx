@@ -1,51 +1,80 @@
+import { useState } from 'react';
 import { Link } from 'react-router';
+import { Heart } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
-type CreatorCardProps = {
-  creator: any;
-};
+export interface CreatorCardProps {
+  name: string;
+  handle: string;
+  followers: number;
+  avatarUrl?: string;
+  coverUrl?: string;
+  tags?: string[];
+  bio?: string;
+  isLiked?: boolean;
+  className?: string;
+}
 
-export default function CreatorCard({ creator }: CreatorCardProps) {
+export default function CreatorCard({
+  name,
+  handle,
+  followers,
+  avatarUrl,
+  coverUrl,
+  tags = [],
+  bio,
+  isLiked = false,
+  className,
+}: CreatorCardProps) {
+  const [liked, setLiked] = useState(isLiked);
+  const profileHref = `/@${handle}`;
+
   return (
-    <Card className="overflow-hidden p-0 rounded-3xl">
-      <Link to={`/@${creator.username}`} className="block relative h-64 bg-gray-100">
-        {creator.coverUrl && (
-          <img src={creator.coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        )}
-      </Link>
+    <Card className={cn('overflow-hidden p-0 rounded-xl border border-border shadow-none', className)}>
+      <div className="relative h-40 bg-muted">
+        <Link to={profileHref} className="block h-full w-full">
+          {coverUrl && <img src={coverUrl} alt="" className="h-full w-full object-cover" />}
+        </Link>
 
-      <div className="px-5 pb-5">
-        <Link to={`/@${creator.username}`} className="block -mt-8 mb-3 w-fit">
-          <Avatar className="w-16 h-16 border-4 border-white shadow-sm">
-            <AvatarImage src={creator.avatarUrl} alt={creator.fullName} />
-            <AvatarFallback className="text-xl">{creator.fullName.charAt(0)}</AvatarFallback>
+        <button
+          type="button"
+          onClick={() => setLiked((prev) => !prev)}
+          aria-label={liked ? 'Remover dos salvos' : 'Salvar criador'}
+          aria-pressed={liked}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+        >
+          <Heart className={cn('w-4 h-4 transition-colors', liked ? 'fill-primary text-primary' : 'text-foreground')} />
+        </button>
+      </div>
+
+      <div className="p-4">
+        <Link to={profileHref} className="flex items-center gap-3 min-w-0">
+          <Avatar className="w-10 h-10 shrink-0">
+            <AvatarImage src={avatarUrl} alt={name} />
+            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
           </Avatar>
+          <div className="min-w-0">
+            <p className="font-medium text-foreground text-sm truncate">{name}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              @{handle} · {followers.toLocaleString('pt-BR')} seguidores
+            </p>
+          </div>
         </Link>
 
-        <Link to={`/@${creator.username}`} className="block">
-          <h3 className="font-bold text-gray-900 text-base truncate">{creator.fullName}</h3>
-          <p className="text-gray-500 text-xs truncate mt-0.5">
-            @{creator.username} · {(creator.followers ?? 0).toLocaleString('pt-BR')} seguidores
-          </p>
-        </Link>
-
-        {creator.skills?.length > 0 && (
+        {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3">
-            {creator.skills.map((skill: string) => (
-              <span
-                key={skill}
-                className="bg-gray-100 text-gray-700 text-[11px] font-semibold px-2.5 py-1 rounded-full"
-              >
-                {skill}
-              </span>
+            {tags.slice(0, 3).map((tag) => (
+              <Badge key={tag} variant="secondary" className="font-medium">
+                {tag}
+              </Badge>
             ))}
           </div>
         )}
 
-        {creator.bio && (
-          <p className="text-gray-600 text-sm leading-relaxed mt-3 line-clamp-2">{creator.bio}</p>
-        )}
+        {bio && <p className="text-sm text-muted-foreground leading-relaxed mt-3 line-clamp-2">{bio}</p>}
       </div>
     </Card>
   );

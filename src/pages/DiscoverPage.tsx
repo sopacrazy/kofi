@@ -18,7 +18,7 @@ export default function DiscoverPage() {
   }, []);
 
   const filteredProjects = projects.filter((p: any) => {
-    const matchesCategory = activeCategory === 'Todos' || p.category === activeCategory;
+    const matchesCategory = activeCategory === 'Todos' || p.tags?.includes(activeCategory);
     const matchesQuery = !query || p.title.toLowerCase().includes(query) || p.user?.fullName?.toLowerCase().includes(query);
     return matchesCategory && matchesQuery;
   });
@@ -35,7 +35,7 @@ export default function DiscoverPage() {
                 onClick={() => setActiveCategory(cat)}
                 className={cn(
                   'relative py-3 text-sm font-semibold whitespace-nowrap transition-colors outline-none',
-                  activeCategory === cat ? 'text-primary' : 'text-gray-500 hover:text-gray-900'
+                  activeCategory === cat ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 {cat}
@@ -50,8 +50,8 @@ export default function DiscoverPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {query && (
-          <p className="text-sm text-gray-500 mb-6">
-            Resultados para <span className="font-semibold text-gray-900">"{searchParams.get('q')}"</span>
+          <p className="text-sm text-muted-foreground mb-6">
+            Resultados para <span className="font-semibold text-foreground">"{searchParams.get('q')}"</span>
           </p>
         )}
 
@@ -76,7 +76,7 @@ export default function DiscoverPage() {
         )}
 
         {!loading && filteredProjects.length === 0 && (
-          <div className="text-center py-20 text-gray-500">
+          <div className="text-center py-20 text-muted-foreground">
             <p className="text-lg">Nenhum projeto encontrado.</p>
           </div>
         )}

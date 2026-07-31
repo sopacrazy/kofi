@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
-import { Routes, Route, Link, NavLink, useNavigate } from 'react-router';
+import { Routes, Route, Navigate, Link, NavLink, useNavigate } from 'react-router';
 import { useAuthStore } from './store/auth';
-import { Mail, Menu, Plus, Search } from 'lucide-react';
+import { Mail, Menu, Plus, Search, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,18 +13,22 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import DiscoverPage from './pages/DiscoverPage';
 import CreatorsPage from './pages/CreatorsPage';
 import ProfilePage from './pages/ProfilePage';
 import ProjectPage from './pages/ProjectPage';
+import ProjectFormPage from './pages/ProjectFormPage';
 import LoginPage from './pages/LoginPage';
-import CreateProjectPage from './pages/CreateProjectPage';
+import SettingsLayout from './pages/settings/SettingsLayout';
+import SettingsProfilePage from './pages/settings/SettingsProfilePage';
+import SettingsPlaceholderPage from './pages/settings/SettingsPlaceholderPage';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     'text-sm font-semibold transition-colors',
-    isActive ? 'text-primary' : 'text-gray-600 hover:text-gray-900'
+    isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
   );
 
 function Navbar() {
@@ -49,19 +53,19 @@ function Navbar() {
               <NavLink to="/" end className={navLinkClass}>Início</NavLink>
               <NavLink to="/descobrir" className={navLinkClass}>Descobrir</NavLink>
               <NavLink to="/criadores" className={navLinkClass}>Criadores</NavLink>
-              <span className="text-sm font-medium text-gray-400 cursor-default select-none">Vagas</span>
-              <span className="text-sm font-medium text-gray-400 cursor-default select-none">Blog</span>
+              <span className="text-sm font-medium text-muted-foreground cursor-default select-none">Vagas</span>
+              <span className="text-sm font-medium text-muted-foreground cursor-default select-none">Blog</span>
             </div>
           </div>
 
           <form onSubmit={handleSearch} className="hidden md:block flex-1 max-w-sm">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar criadores, projetos, tags..."
-                className="pl-9 h-9 rounded-full bg-gray-50"
+                className="pl-9 h-9 rounded-full bg-muted"
               />
             </div>
           </form>
@@ -87,6 +91,11 @@ function Navbar() {
                     <DropdownMenuItem asChild>
                       <Link to={`/@${user.username}`}>Meu perfil</Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/configuracoes">
+                        <Settings className="w-4 h-4" /> Configurações
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
@@ -101,7 +110,7 @@ function Navbar() {
                 </DropdownMenu>
 
                 <Button asChild size="sm" className="hidden sm:inline-flex">
-                  <Link to="/create">
+                  <Link to="/novo-projeto">
                     <Plus className="w-4 h-4" /> Publicar
                   </Link>
                 </Button>
@@ -150,7 +159,7 @@ function Navbar() {
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/create">Publicar projeto</Link>
+                      <Link to="/novo-projeto">Publicar projeto</Link>
                     </DropdownMenuItem>
                   </>
                 )}
@@ -165,7 +174,7 @@ function Navbar() {
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900">
+    <div className="min-h-screen bg-muted font-sans text-foreground">
       <Navbar />
       <main>
         <Routes>
@@ -174,11 +183,20 @@ export default function App() {
           <Route path="/criadores" element={<CreatorsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<LoginPage isRegister />} />
+          <Route path="/novo-projeto" element={<ProjectFormPage />} />
           <Route path="/:handle" element={<ProfilePage />} />
-          <Route path="/project/:id" element={<ProjectPage />} />
-          <Route path="/create" element={<CreateProjectPage />} />
+          <Route path="/:handle/:slug" element={<ProjectPage />} />
+          <Route path="/:handle/:slug/editar" element={<ProjectFormPage />} />
+          <Route path="/configuracoes" element={<SettingsLayout />}>
+            <Route index element={<Navigate to="/configuracoes/perfil" replace />} />
+            <Route path="perfil" element={<SettingsProfilePage />} />
+            <Route path="conta" element={<SettingsPlaceholderPage title="Conta" />} />
+            <Route path="notificacoes" element={<SettingsPlaceholderPage title="Notificações" />} />
+            <Route path="privacidade" element={<SettingsPlaceholderPage title="Privacidade" />} />
+          </Route>
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 }

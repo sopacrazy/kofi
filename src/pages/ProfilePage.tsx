@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import ProjectCard from '../components/ProjectCard';
-import { Link as LinkIcon, Mail, MoreHorizontal, UserPlus } from 'lucide-react';
+import BadgeIcon from '../components/BadgeIcon';
+import EmptyState from '../components/EmptyState';
+import { FolderPlus, Link as LinkIcon, Mail, MoreHorizontal, Plus, UserPlus } from 'lucide-react';
 import { getUserByUsername } from '../mockData';
 import { useAuthStore } from '../store/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,19 +24,20 @@ export default function ProfilePage() {
   }, [username]);
 
   if (loading) {
-    return <div className="min-h-[50vh] flex items-center justify-center text-gray-500">Carregando...</div>;
+    return <div className="min-h-[50vh] flex items-center justify-center text-muted-foreground">Carregando...</div>;
   }
 
   if (!user) {
-    return <div className="text-center py-20 text-gray-500">Usuário não encontrado.</div>;
+    return <div className="text-center py-20 text-muted-foreground">Usuário não encontrado.</div>;
   }
 
   const isOwnProfile = currentUser?.username === user.username;
+  const visibleProjects = isOwnProfile ? user.projects : user.projects.filter((p: any) => p.isPublic);
 
   return (
     <div>
       {/* Cover */}
-      <div className="h-48 md:h-64 bg-gray-200 w-full relative overflow-hidden">
+      <div className="h-36 md:h-40 bg-muted w-full relative overflow-hidden">
         {user.coverUrl && (
           <img src={user.coverUrl} alt="Cover" className="w-full h-full object-cover" />
         )}
@@ -50,17 +53,33 @@ export default function ProfilePage() {
             </Avatar>
 
             <div className="pb-2">
-              <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">{user.fullName}</h1>
-              <p className="text-gray-500 font-medium">
-                @{user.username} • {user.category || 'Criador'} • {(user.followers ?? 0).toLocaleString('pt-BR')} seguidores
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">{user.fullName}</h1>
+                {user.category && (
+                  <span className="bg-tag text-tag-foreground text-[11px] font-semibold px-2.5 py-1 rounded-full">
+                    {user.category}
+                  </span>
+                )}
+                {user.badges?.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    {user.badges.map((badge: any) => (
+                      <BadgeIcon key={badge.id} iconName={badge.iconName} color={badge.color} label={badge.label} />
+                    ))}
+                  </span>
+                )}
+              </div>
+              <p className="text-muted-foreground font-medium">
+                @{user.username} · {(user.followers ?? 0).toLocaleString('pt-BR')} seguidores
               </p>
             </div>
           </div>
 
           <div className="flex gap-2 pb-2">
             {isOwnProfile ? (
-              <Button asChild variant="outline">
-                <Link to="/create">Novo projeto</Link>
+              <Button asChild>
+                <Link to="/novo-projeto">
+                  <Plus className="w-4 h-4" /> Novo projeto
+                </Link>
               </Button>
             ) : (
               <>
@@ -82,52 +101,70 @@ export default function ProfilePage() {
           </TabsList>
 
           <TabsContent value="projetos">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-4 lg:gap-6">
               {/* Sidebar */}
-              <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
-                {user.bio && (
-                  <Card>
-                    <CardContent className="p-6">
-                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Sobre</h3>
-                      <p className="text-gray-600 leading-relaxed text-sm">{user.bio}</p>
-                    </CardContent>
-                  </Card>
-                )}
-
+              <div className="order-2 lg:order-1">
                 <Card>
-                  <CardContent className="p-6">
-                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Links</h3>
-                    <ul className="space-y-3 text-sm">
-                      <li>
-                        <a href="#" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors">
-                          <LinkIcon className="w-4 h-4" /> meuportfolio.com
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors">
-                          <Mail className="w-4 h-4" /> Contato
-                        </a>
-                      </li>
-                    </ul>
+                  <CardContent className="p-5 space-y-5">
+                    {user.bio && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground mb-2">Sobre</h3>
+                        <p className="text-muted-foreground leading-relaxed text-sm">{user.bio}</p>
+                      </div>
+                    )}
+
+                    {(user.portfolioLink || user.contactEmail) && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground mb-2">Links</h3>
+                        <ul className="space-y-2.5 text-sm">
+                          {user.portfolioLink && (
+                            <li>
+                              <a
+                                href={user.portfolioLink.startsWith('http') ? user.portfolioLink : `https://${user.portfolioLink}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors truncate"
+                              >
+                                <LinkIcon className="w-4 h-4 shrink-0" /> {user.portfolioLink}
+                              </a>
+                            </li>
+                          )}
+                          {user.contactEmail && (
+                            <li>
+                              <a
+                                href={`mailto:${user.contactEmail}`}
+                                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors truncate"
+                              >
+                                <Mail className="w-4 h-4 shrink-0" /> {user.contactEmail}
+                              </a>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
 
               {/* Projects */}
-              <div className="lg:col-span-2 order-1 lg:order-2">
-                {user.projects && user.projects.length > 0 ? (
+              <div className="order-1 lg:order-2 min-w-0">
+                {visibleProjects.length > 0 ? (
                   <div className="columns-1 sm:columns-2 gap-6">
-                    {user.projects.map((project: any) => (
+                    {visibleProjects.map((project: any) => (
                       <div key={project.id} className="mb-6 break-inside-avoid">
-                        <ProjectCard project={{ ...project, user }} />
+                        <ProjectCard project={project} />
                       </div>
                     ))}
                   </div>
                 ) : (
                   <Card>
-                    <CardContent className="p-8 text-center text-gray-500">
-                      Este criador ainda não publicou projetos.
-                    </CardContent>
+                    <EmptyState
+                      icon={FolderPlus}
+                      title={isOwnProfile ? 'Você ainda não publicou projetos' : `${user.fullName} ainda não publicou projetos`}
+                      description={isOwnProfile ? 'Mostre seu trabalho e comece a atrair seguidores.' : undefined}
+                      actionLabel={isOwnProfile ? 'Criar meu primeiro projeto' : undefined}
+                      actionTo={isOwnProfile ? '/novo-projeto' : undefined}
+                    />
                   </Card>
                 )}
               </div>
@@ -137,8 +174,8 @@ export default function ProfilePage() {
           <TabsContent value="sobre">
             <Card className="max-w-2xl">
               <CardContent className="p-6">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Sobre {user.fullName}</h3>
-                <p className="text-gray-600 leading-relaxed">{user.bio || 'Este criador ainda não escreveu uma bio.'}</p>
+                <h3 className="text-sm font-semibold text-foreground mb-3">Sobre {user.fullName}</h3>
+                <p className="text-muted-foreground leading-relaxed">{user.bio || 'Este criador ainda não escreveu uma bio.'}</p>
               </CardContent>
             </Card>
           </TabsContent>

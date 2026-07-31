@@ -1,105 +1,170 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router';
-import { Heart, Share2 } from 'lucide-react';
-import { getProjectById } from '../mockData';
+import { useEffect, useRef, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router';
+import { ArrowRight, Check, Copy, Eye, Heart, Pencil } from 'lucide-react';
+import { getProjectByUsernameAndSlug, incrementProjectViewCount } from '../mockData';
+import { useAuthStore } from '../store/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 
 export default function ProjectPage() {
-  const { id } = useParams();
+  const { handle, slug } = useParams();
+  const username = handle?.startsWith('@') ? handle.slice(1) : handle;
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuthStore();
+
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const viewCounted = useRef(false);
 
   useEffect(() => {
-    setProject(id ? getProjectById(id) : null);
+    const found = username && slug ? getProjectByUsernameAndSlug(username, slug) : null;
+    setProject(found);
     setLoading(false);
-  }, [id]);
+  }, [username, slug]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
-  if (!project) return <div className="text-center py-20 text-gray-500">Projeto não encontrado.</div>;
+  useEffect(() => {
+    if (project && !viewCounted.current) {
+      viewCounted.current = true;
+      incrementProjectViewCount(project.id);
+    }
+  }, [project]);
 
-  const tools = Array.isArray(project.tools) ? project.tools : (typeof project.tools === 'string' ? JSON.parse(project.tools) : []);
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
+  }
+
+  const isOwner = currentUser?.id === project?.ownerId;
+
+  if (!project || (!project.isPublic && !isOwner)) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
+        <h1 className="text-xl font-bold text-foreground mb-2">Projeto não encontrado</h1>
+        <p className="text-muted-foreground mb-6">Esse projeto não existe ou não está mais disponível.</p>
+        <Button asChild variant="outline">
+          <Link to="/descobrir">Explorar outros projetos</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard indisponível (ex: contexto não seguro) — ignora silenciosamente.
+    }
+  };
+
+  const publishedDate = new Date(project.createdAt).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
 
   return (
     <div className="bg-white min-h-screen">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-
-          {/* Main Gallery */}
-          <div className="lg:col-span-8 xl:col-span-9 space-y-6">
-            {project.coverUrl && (
-              <img src={project.coverUrl} alt="Cover" className="w-full rounded-2xl object-cover" />
+      {/* Header simples */}
+      <div className="border-b border-border">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="font-extrabold text-lg tracking-tight text-primary">
+            Folio
+          </Link>
+          <div className="flex items-center gap-2">
+            {isOwner && (
+              <Button asChild variant="outline" size="sm">
+                <Link to={`/@${username}/${slug}/editar`}>
+                  <Pencil className="w-3.5 h-3.5" /> Editar
+                </Link>
+              </Button>
             )}
+            <Button variant="outline" size="sm" onClick={handleCopyLink}>
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5" /> Link copiado
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" /> Copiar link
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
 
-            {project.images?.map((img: any) => (
-              <img key={img.id} src={img.imageUrl} alt="" className="w-full rounded-2xl object-cover" />
+      {!project.isPublic && (
+        <div className="bg-tag text-tag-foreground text-sm font-medium text-center py-2">
+          Este projeto é um rascunho — só você consegue vê-lo.
+        </div>
+      )}
+
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+        {/* Capa */}
+        <img
+          src={project.coverImageUrl}
+          alt={project.title}
+          className="w-full h-56 rounded-2xl object-cover mb-6"
+        />
+
+        {/* Título */}
+        <h1 className="text-xl font-medium text-foreground mb-3">{project.title}</h1>
+
+        {/* Atribuição */}
+        <Link to={`/@${project.user.username}`} className="flex items-center gap-2 mb-4 w-fit">
+          <Avatar className="w-6 h-6">
+            <AvatarImage src={project.user.avatarUrl} alt={project.user.fullName} />
+            <AvatarFallback className="text-[10px]">{project.user.fullName.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <span className="text-sm text-foreground font-medium hover:text-primary transition-colors">
+            {project.user.fullName}
+          </span>
+          <span className="text-sm text-muted-foreground">· publicado em {publishedDate}</span>
+        </Link>
+
+        {/* Tags */}
+        {project.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-5">
+            {project.tags.map((tag: string) => (
+              <Badge key={tag} variant="secondary">{tag}</Badge>
             ))}
           </div>
+        )}
 
-          {/* Sidebar */}
-          <div className="lg:col-span-4 xl:col-span-3">
-            <div className="sticky top-24 space-y-6">
+        {/* Descrição */}
+        {project.description && (
+          <p className="text-muted-foreground leading-relaxed mb-8 whitespace-pre-wrap">{project.description}</p>
+        )}
 
-              {/* Creator Card */}
-              <Card className="bg-gray-50 border-gray-100">
-                <CardContent className="p-6">
-                  <Link to={`/@${project.user?.username}`} className="flex items-center gap-4 mb-4">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={project.user?.avatarUrl} alt={project.user?.fullName} />
-                      <AvatarFallback>{project.user?.fullName?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-bold text-gray-900">{project.user?.fullName}</h3>
-                      <p className="text-sm text-gray-500">{project.user?.category || 'Criador'}</p>
-                    </div>
-                  </Link>
-                  <Button className="w-full">Seguir</Button>
-                </CardContent>
-              </Card>
-
-              {/* Project Info */}
-              <div>
-                <h1 className="text-2xl font-extrabold text-gray-900 mb-2">{project.title}</h1>
-                {project.category && (
-                  <Badge variant="secondary" className="mb-4">{project.category}</Badge>
-                )}
-
-                {project.description && (
-                  <p className="text-gray-600 leading-relaxed mb-6 whitespace-pre-wrap">{project.description}</p>
-                )}
-
-                {tools.length > 0 && (
-                  <div className="mb-6">
-                    <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-2">Ferramentas</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {tools.map((tool: string) => (
-                        <Badge key={tool} variant="outline">{tool}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-4 border-t border-gray-100 pt-6">
-                <button className="flex-1 flex flex-col items-center justify-center gap-2 p-3 rounded-xl hover:bg-gray-50 text-gray-500 hover:text-primary transition-colors">
-                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
-                    <Heart className="w-6 h-6" />
-                  </div>
-                  <span className="text-sm font-bold">Apreciar</span>
-                </button>
-                <button className="flex-1 flex flex-col items-center justify-center gap-2 p-3 rounded-xl hover:bg-gray-50 text-gray-500 transition-colors">
-                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
-                    <Share2 className="w-6 h-6" />
-                  </div>
-                  <span className="text-sm font-bold">Compartilhar</span>
-                </button>
-              </div>
-            </div>
+        {/* Galeria */}
+        {project.gallery?.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            {project.gallery.map((url: string, index: number) => (
+              <img
+                key={url + index}
+                src={url}
+                alt=""
+                className={`w-full rounded-2xl object-cover ${index === 0 ? 'sm:col-span-2' : ''}`}
+              />
+            ))}
           </div>
+        )}
 
+        {/* Rodapé */}
+        <div className="flex items-center justify-between border-t border-border pt-6">
+          <div className="flex items-center gap-4 text-muted-foreground text-sm">
+            <span className="flex items-center gap-1.5">
+              <Heart className="w-4 h-4" /> {project.likeCount}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Eye className="w-4 h-4" /> {project.viewCount.toLocaleString('pt-BR')} visualizações
+            </span>
+          </div>
+          <Link
+            to={`/@${project.user.username}`}
+            className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+          >
+            Ver mais projetos de {project.user.fullName.split(' ')[0]} <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
     </div>

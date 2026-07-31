@@ -55,12 +55,46 @@ export const comments = sqliteTable('comments', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
+// Selos de reputação (ex: "verified", "top_creator"). Concedidos manualmente por enquanto,
+// via inserts diretos em user_badges — a lógica automática de concessão fica pra depois.
+export const badges = sqliteTable('badges', {
+  id: text('id').primaryKey(),
+  slug: text('slug').notNull().unique(), // e.g. "verified"
+  label: text('label').notNull(), // e.g. "Verificado"
+  description: text('description'),
+  iconName: text('icon_name').notNull(), // chave usada pelo frontend p/ escolher o ícone: "check" | "trophy" | "users"
+  color: text('color').notNull(), // chave usada pelo frontend p/ escolher a cor: "blue" | "amber" | "green"
+});
+
+export const userBadges = sqliteTable('user_badges', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  badgeId: text('badge_id').notNull().references(() => badges.id, { onDelete: 'cascade' }),
+  awardedAt: integer('awarded_at', { mode: 'timestamp' }).notNull(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects),
   likes: many(likes),
   followers: many(follows, { relationName: 'followers' }),
   following: many(follows, { relationName: 'following' }),
   comments: many(comments),
+  userBadges: many(userBadges),
+}));
+
+export const badgesRelations = relations(badges, ({ many }) => ({
+  userBadges: many(userBadges),
+}));
+
+export const userBadgesRelations = relations(userBadges, ({ one }) => ({
+  user: one(users, {
+    fields: [userBadges.userId],
+    references: [users.id],
+  }),
+  badge: one(badges, {
+    fields: [userBadges.badgeId],
+    references: [badges.id],
+  }),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({

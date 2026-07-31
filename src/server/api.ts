@@ -152,11 +152,13 @@ router.get('/users/:username', async (req, res) => {
       where: eq(users.username, req.params.username),
       columns: { passwordHash: false },
       with: {
-        projects: { orderBy: [desc(projects.createdAt)] }
+        projects: { orderBy: [desc(projects.createdAt)] },
+        userBadges: { with: { badge: true } },
       }
     });
     if (!user) return res.status(404).json({ error: 'Not found' });
-    res.json(user);
+    const { userBadges: userBadgeEntries, ...userWithoutBadgeJoin } = user;
+    res.json({ ...userWithoutBadgeJoin, badges: userBadgeEntries.map((entry) => entry.badge) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

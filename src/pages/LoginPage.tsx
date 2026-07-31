@@ -41,10 +41,10 @@ export default function LoginPage({ isRegister = false }: { isRegister?: boolean
             <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
               <Heart className="w-6 h-6 text-primary-foreground fill-current" />
             </div>
-            <h2 className="text-2xl font-extrabold text-gray-900">
+            <h2 className="text-2xl font-extrabold text-foreground">
               {isRegister ? 'Crie sua conta' : 'Bem-vindo de volta'}
             </h2>
-            <p className="text-gray-500 mt-2">
+            <p className="text-muted-foreground mt-2">
               {isRegister ? 'Mostre seu trabalho ao mundo.' : 'Entre para continuar.'}
             </p>
           </div>
@@ -59,7 +59,7 @@ export default function LoginPage({ isRegister = false }: { isRegister?: boolean
             {isRegister && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Nome Completo</label>
                   <Input
                     type="text" required
                     value={fullName} onChange={e => setFullName(e.target.value)}
@@ -67,7 +67,7 @@ export default function LoginPage({ isRegister = false }: { isRegister?: boolean
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Username</label>
                   <Input
                     type="text" required
                     value={username} onChange={e => setUsername(e.target.value)}
@@ -78,7 +78,7 @@ export default function LoginPage({ isRegister = false }: { isRegister?: boolean
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 {isRegister ? 'E-mail' : 'E-mail ou usuário'}
               </label>
               <Input
@@ -89,7 +89,7 @@ export default function LoginPage({ isRegister = false }: { isRegister?: boolean
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Senha</label>
               <Input
                 type="password" required
                 value={password} onChange={e => setPassword(e.target.value)}
@@ -103,10 +103,10 @@ export default function LoginPage({ isRegister = false }: { isRegister?: boolean
           </form>
 
           {!isRegister && (
-            <p className="mt-4 text-center text-xs text-gray-400">Conta de teste: admin / admin</p>
+            <p className="mt-4 text-center text-xs text-muted-foreground">Conta de teste: admin / admin</p>
           )}
 
-          <div className="mt-8 text-center text-sm text-gray-500 font-medium">
+          <div className="mt-8 text-center text-sm text-muted-foreground font-medium">
             {isRegister ? 'Já tem uma conta?' : 'Ainda não tem conta?'}
             <a href={isRegister ? '/login' : '/register'} className="text-primary hover:text-primary/80 ml-1">
               {isRegister ? 'Faça login' : 'Cadastre-se'}
